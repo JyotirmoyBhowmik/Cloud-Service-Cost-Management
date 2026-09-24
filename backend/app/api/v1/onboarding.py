@@ -32,6 +32,12 @@ STEP_NAMES = {
 }
 
 
+@router.get("/steps")
+def list_onboarding_steps():
+    """Returns the sequence of 16 onboarding wizard stages per User Request §16."""
+    return [{"step_number": k, "name": v} for k, v in STEP_NAMES.items()]
+
+
 @router.post("/validate", response_model=OnboardingValidateResponse)
 def validate_onboarding_step(payload: OnboardingValidateRequest, db: Session = Depends(get_db)):
     """
