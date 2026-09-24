@@ -47,7 +47,7 @@ class BudgetResponse(BaseModel):
     forecast_threshold_pct: float
     current_spend: float
     forecasted_spend: float
-    utilization_pct: float
+    utilization_pct: float = 0.0
     parent_budget_id: Optional[str] = None
     owner_email: Optional[str] = None
     alert_emails: List[str] = Field(default_factory=list)

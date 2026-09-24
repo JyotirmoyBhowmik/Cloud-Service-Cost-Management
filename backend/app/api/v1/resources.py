@@ -117,29 +117,31 @@ def get_resource_360_detail(resource_id: str, db: Session = Depends(get_db)):
     360° Comprehensive Service Detail view per User Request §21:
     Overview, Provider, Pricing, Cost, Usage, Runtime, Dependencies, Alerts, Audit.
     """
-    resource = db.query(ResourceNode).filter(ResourceNode.id == resource_id).first()
+    resource = db.query(ResourceNode).filter(
+        or_(ResourceNode.id == resource_id, ResourceNode.canonical_id == resource_id, ResourceNode.name == resource_id)
+    ).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found.")
 
     # 1. Costs
-    costs = db.query(CostRecord).filter(CostRecord.resource_id == resource_id).all()
+    costs = db.query(CostRecord).filter(CostRecord.resource_id == resource.id).all()
     total_billed = sum(c.billed_cost for c in costs if c.cost_state == "ACTUAL")
     total_est = sum(c.billed_cost for c in costs if c.cost_state == "ESTIMATED")
     monthly_val = total_billed if total_billed > 0 else total_est
     horizons = CostEngine.calculate_cost_horizons(monthly_val)
 
     # 2. Telemetry
-    telemetry = db.query(UsageMetric).filter(UsageMetric.resource_id == resource_id).order_by(UsageMetric.recorded_at.desc()).limit(10).all()
+    telemetry = db.query(UsageMetric).filter(UsageMetric.resource_id == resource.id).order_by(UsageMetric.recorded_at.desc()).limit(10).all()
 
     # 3. Runtime
-    runtime = db.query(RuntimeRecord).filter(RuntimeRecord.resource_id == resource_id).first()
+    runtime = db.query(RuntimeRecord).filter(RuntimeRecord.resource_id == resource.id).first()
 
     # 4. Outgoing & Incoming Dependencies
-    out_edges = db.query(DependencyEdge).filter(DependencyEdge.source_node_id == resource_id).all()
-    in_edges = db.query(DependencyEdge).filter(DependencyEdge.target_node_id == resource_id).all()
+    out_edges = db.query(DependencyEdge).filter(DependencyEdge.source_node_id == resource.id).all()
+    in_edges = db.query(DependencyEdge).filter(DependencyEdge.target_node_id == resource.id).all()
 
     # 5. Active Alerts
-    alerts = db.query(Alert).filter(Alert.resource_id == resource_id).all()
+    alerts = db.query(Alert).filter(Alert.resource_id == resource.id).all()
 
     return {
         "overview": {
@@ -204,7 +206,9 @@ def get_resource_pricing_explanation(resource_id: str, db: Session = Depends(get
     Core Differentiator: Generates comprehensive explanation payload for Information Icon (ⓘ).
     Answers: 'Why does this service cost this amount?' per User Request §5 & §52.
     """
-    resource = db.query(ResourceNode).filter(ResourceNode.id == resource_id).first()
+    resource = db.query(ResourceNode).filter(
+        or_(ResourceNode.id == resource_id, ResourceNode.canonical_id == resource_id, ResourceNode.name == resource_id)
+    ).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found.")
     
@@ -216,7 +220,9 @@ def get_resource_cost_breakdown(resource_id: str, db: Session = Depends(get_db))
     """
     Provides multi-dimensional financial breakdown: Compute, Storage, Network, Backup, Other.
     """
-    resource = db.query(ResourceNode).filter(ResourceNode.id == resource_id).first()
+    resource = db.query(ResourceNode).filter(
+        or_(ResourceNode.id == resource_id, ResourceNode.canonical_id == resource_id, ResourceNode.name == resource_id)
+    ).first()
     if not resource:
         raise HTTPException(status_code=404, detail="Resource not found.")
 
